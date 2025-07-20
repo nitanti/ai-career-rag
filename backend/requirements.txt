@@ -3,7 +3,6 @@ uvicorn==0.29.0
 python-dotenv==1.0.1
 langchain==0.1.16
 langchain-community==0.0.34
-langchain-groq
 sentence-transformers==2.6.1
-unstructured==0.12.6
+unstructured
 pypdf==4.1.0
