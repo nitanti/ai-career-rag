@@ -1,0 +1,18 @@
+# FastAPI server and ASGI app runner
+fastapi
+uvicorn
+
+# Load environment variables from .env file
+python-dotenv
+
+# LangChain core components and Groq integration for RAG
+langchain
+langchain-community
+langchain-groq
+
+# Sentence embedding model for document vectorization
+sentence-transformers
+
+# Document loaders for PDFs, DOCX, TXT, and images
+unstructured
+pypdf
