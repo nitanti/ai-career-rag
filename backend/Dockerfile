@@ -1,31 +1,26 @@
-# Use a lightweight Python base image
-FROM python:3.10-slim
+FROM python:3.11-slim
 
-# Environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
-    libgl1 \
-    poppler-utils \
+    libpoppler-cpp-dev \
     tesseract-ocr \
-    libreoffice \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install
+# Install Python dependencies
 COPY requirements.txt .
-
-RUN pip install --no-cache-dir --upgrade pip \
- && pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project files
 COPY . .
 
-# Expose FastAPI on port 80
+# Expose port
 EXPOSE 80
 
-# Run the FastAPI app (rag_pipeline contains /upload and /ask, main.py has /rag-query)
+# Run FastAPI app (main.py runs rag_query + uses rag_pipeline inside)
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
