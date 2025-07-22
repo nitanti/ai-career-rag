@@ -1,0 +1,37 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Logs and env
+*.log
+.env
+.env.*
+*.db
+
+# IDE and system files
+.vscode/
+.idea/
+.DS_Store
+
+# Git and config
+.git/
+.gitignore
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Virtual environment
+venv/
+.venv/
+
+# Model or large files
+*.pdf
+*.docx
+*.zip
+*.tar.gz
+*.pt
+*.onnx
+*.bin
+*.h5
+*.pickle
+*.joblib

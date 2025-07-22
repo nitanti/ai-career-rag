@@ -1,34 +1,80 @@
-# Python
+# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
-__pycache__/
-*.pyc
+*$py.class
 
-# Env
-.env
+# C extensions
+*.so
 
-# Log files
-*.log
-*.tmp
-*.swp
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# OS
-.DS_Store
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
 
-# FastAPI specific
-instance/
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
 
-#Venv
-venv/
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
 
-# Node
-node_modules/
-
-# Environment
-.env
-
-# VSCode
+# PyCharm / VSCode
+.idea/
 .vscode/
 
-# OS files
+# Pyre type checker
+.pyre/
+
+# dotenv environment variables
+.env
+.env.*
+
+# OS junk
 .DS_Store
+
+# Logs
+*.log
+
+# Docker (safe ignores only)
+docker-compose.override.yml
+*.pid
+
+# Mac system file
+.DS_Store
+
+# Python cache
+*.py[cod]
+
+# Test logs / coverage
+*.log
+.pytest_cache/
+coverage.xml
+
+# Ignore virtual environment
+venv/
