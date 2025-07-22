@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: career-rag-backend
+    env: docker
+    plan: free
+    autoDeploy: true
+    region: oregon
+    branch: dev
+    rootDir: backend
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"

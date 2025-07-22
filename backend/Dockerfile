@@ -1,31 +1,38 @@
 # Stage 1 - Builder
-FROM python:3.11-slim as builder
+FROM python:3.10-slim as builder
 
 WORKDIR /install
-COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Stage 2 - Final image
-FROM python:3.11-slim
+COPY requirements.txt .
+
+# Install build-time deps and Python packages
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        libpoppler-cpp-dev \
+        tesseract-ocr \
+    && rm -rf /var/lib/apt/lists/* && \
+    python -m pip install --no-cache-dir --upgrade pip && \
+    python -m pip install --no-cache-dir --prefix=/install -r requirements.txt && \
+    rm -rf /tmp/* /root/.cache
+
+# Stage 2 - Runtime
+FROM python:3.10-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Only install required runtime OS packages if needed
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpoppler-cpp-dev \
-    tesseract-ocr \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        libpoppler-cpp-dev \
+        tesseract-ocr \
+    && apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /root/.cache
 
-# Copy installed Python packages from builder
 COPY --from=builder /install /usr/local
-
-# Copy application code
 COPY . .
 
-EXPOSE 80
+EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "80"]
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
