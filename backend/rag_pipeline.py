@@ -28,7 +28,10 @@ logger = logging.getLogger(__name__)
 
 # Environment configuration
 IS_DEV = os.getenv("DEBUG_MODE", "false").lower() == "true"
-load_dotenv()
+
+if IS_DEV:
+    load_dotenv()
+
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 assert (
     GROQ_API_KEY
