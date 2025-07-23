@@ -6,6 +6,8 @@ import os
 import tempfile
 from dotenv import load_dotenv
 import logging
+import pytesseract
+from PIL import Image
 
 # LangChain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -17,9 +19,9 @@ from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import (
     TextLoader,
     PyPDFLoader,
-    UnstructuredWordDocumentLoader,
-    UnstructuredImageLoader,
+    UnstructuredWordDocumentLoader
 )
+from langchain.schema import Document
 
 # Fromtemd URL configuration
 FRONTEND_URL = os.getenv("FRONTEND_URL", "*")
@@ -77,7 +79,23 @@ def process_documents(path: str):
     elif path.endswith(".docx"):
         loader = UnstructuredWordDocumentLoader(path)
     elif path.endswith((".png", ".jpg", ".jpeg")):
-        loader = UnstructuredImageLoader(path)
+        try:
+            img = Image.open(path)
+            img = img.convert("RGB")
+            img = img.resize((img.width // 2, img.height // 2))
+
+            text = pytesseract.image_to_string(img)
+            logger.info(f"OCR text length: {len(text)}")
+            docs = [Document(page_content=text)]
+
+        except Exception as e:
+            logger.error(f"OCR failed: {e}")
+            raise ValueError("OCR failed")
+
+        splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+        chunks = splitter.split_documents(docs)
+        embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        return FAISS.from_documents(chunks, embeddings)
     else:
         raise ValueError(
             "Please upload a supported file type: .pdf, .txt, .docx, .png, .jpg"
