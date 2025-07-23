@@ -6,7 +6,6 @@ import os
 import tempfile
 from dotenv import load_dotenv
 import logging
-import traceback
 
 # LangChain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -22,26 +21,28 @@ from langchain_community.document_loaders import (
     UnstructuredImageLoader,
 )
 
-# Logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Fromtemd URL configuration
+FRONTEND_URL = os.getenv("FRONTEND_URL", "*")
 
 # Environment configuration
-IS_DEV = os.getenv("DEBUG_MODE", "false").lower() == "true"
+IS_DEV = os.getenv("DEBUG_MODE", "false").strip().lower() == "true"
 
 if IS_DEV:
     load_dotenv()
 
+# Logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG if IS_DEV else logging.INFO)
+
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-assert (
-    GROQ_API_KEY
-), "GROQ_API_KEY not found. Replace it in the .env file (e.g. gsk_xxxxx)."
+assert GROQ_API_KEY, "GROQ_API_KEY not found. Please set it in the .env file."
 
 # FastAPI setup
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # TODO: set specific domain in production
+    allow_origins=[FRONTEND_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -58,7 +59,16 @@ vectorstore = None
 rag_chain = None
 
 
-# Process documents
+# Backend health check
+@app.get("/")
+def root():
+    return {
+        "message": "RAG backend is running.",
+        "mode": "development" if IS_DEV else "production",
+    }
+
+
+# Process uploaded document
 def process_documents(path: str):
     if path.endswith(".pdf"):
         loader = PyPDFLoader(path)
@@ -69,7 +79,9 @@ def process_documents(path: str):
     elif path.endswith((".png", ".jpg", ".jpeg")):
         loader = UnstructuredImageLoader(path)
     else:
-        raise ValueError(f"Unsupported file type: {path}")
+        raise ValueError(
+            "Please upload a supported file type: .pdf, .txt, .docx, .png, .jpg"
+        )
 
     docs = loader.load()
     logger.info(f"Loaded {len(docs)} documents from: {path}")
@@ -77,6 +89,9 @@ def process_documents(path: str):
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
     chunks = splitter.split_documents(docs)
     logger.info(f"Split into {len(chunks)} chunks")
+
+    if IS_DEV:
+        logger.debug(f"First chunk preview: {chunks[0].page_content[:200]}")
 
     embeddings = HuggingFaceEmbeddings(
         model_name="sentence-transformers/all-MiniLM-L6-v2"
@@ -123,16 +138,23 @@ Avoid generic answers. Tailor your suggestions to the user's context. Use a warm
 @app.post("/upload")
 async def upload(file: UploadFile = File(...)):
     global vectorstore, rag_chain
+    temp_path = None
     try:
         contents = await file.read()
         suffix = os.path.splitext(file.filename)[-1]
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as f:
             f.write(contents)
             temp_path = f.name
+
         logger.info(f"Received file: {file.filename}")
+        if IS_DEV:
+            logger.debug(f"Temp file saved at: {temp_path}")
 
         vectorstore = process_documents(temp_path)
         rag_chain = build_rag_chain(vectorstore)
+
+        if IS_DEV:
+            logger.debug("Vectorstore and RAG chain created")
 
         try:
             num_docs = len(vectorstore.index_to_docstore_id)
@@ -150,29 +172,50 @@ async def upload(file: UploadFile = File(...)):
         }
 
     except Exception as e:
-        traceback.print_exc()
-        logger.error(f"Upload failed: {e}")
-        return {"status": "error", "message": str(e)}
+        if IS_DEV:
+            logger.exception("Traceback for upload failure:")
+        else:
+            logger.error("Upload failed", exc_info=True)
+        return {"status": "error", "message": str(e).strip() or "Upload failed"}
+
+    finally:
+        if temp_path and os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+                logger.info(f"Temp file deleted: {temp_path}")
+            except Exception as cleanup_err:
+                logger.warning(f"Could not delete temp file: {cleanup_err}")
 
 
 # Ask endpoint
 @app.post("/ask")
 async def ask(query: QueryInput):
     if not rag_chain:
+        logger.warning("Attempted to query before uploading documents")
         return {"error": "Please upload documents first."}
     try:
+        if IS_DEV:
+            logger.debug(f"User query: {query.question}")
+
         response = rag_chain.invoke({"query": query.question})
-        if isinstance(response, dict) and "result" in response:
-            return {"question": query.question, "answer": response["result"]}
-        elif isinstance(response, str):
-            return {"question": query.question, "answer": response}
-        else:
-            return {"question": query.question, "answer": str(response)}
+        answer = (
+            response["result"]
+            if isinstance(response, dict) and "result" in response
+            else str(response)
+        )
+        return {"question": query.question, "answer": answer}
+
     except Exception as e:
-        traceback.print_exc()
-        return {"error": str(e) or "Unknown internal error."}
+        if IS_DEV:
+            message = str(e).strip() or "Unknown internal error."
+            return {"error": message}
+        else:
+            logger.error("Unexpected error", exc_info=True)
+            return {"error": "Something went wrong. Please try again later."}
 
 
-# Local run
+# Run server locally
 if __name__ == "__main__":
-    uvicorn.run("rag_pipeline:app", host="0.0.0.0", port=8000, reload=True)
+    port = int(os.getenv("PORT", 8000))
+    logger.info(f"Starting server on port {port}")
+    uvicorn.run("rag_pipeline:app", host="0.0.0.0", port=port, reload=IS_DEV)
