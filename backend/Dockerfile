@@ -5,12 +5,11 @@ WORKDIR /install
 
 COPY requirements.txt .
 
-# Install build-time deps and Python packages
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         libpoppler-cpp-dev \
         tesseract-ocr \
-        libgl1 \
+        poppler-utils \
     && rm -rf /var/lib/apt/lists/* && \
     python -m pip install --no-cache-dir --upgrade pip && \
     python -m pip install --no-cache-dir --prefix=/install -r requirements.txt && \
@@ -28,7 +27,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         libpoppler-cpp-dev \
         tesseract-ocr \
-        libgl1 \
+        poppler-utils \
     && apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /root/.cache
 
