@@ -10,7 +10,7 @@
 ![Tailwind](https://img.shields.io/badge/Tailwind-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 
 An AI-powered career assistant that uses Retrieval-Augmented Generation (RAG) with Groq's LLaMA3 and FAISS to provide personalised career guidance.  
-Users can upload their resume and ask career-related questions, with responses grounded in their own experience.
+Users can upload their CV/resume and ask career-related questions, with responses grounded in their own experience.
 
 🔗 [GitHub Repository](https://github.com/nitanti/ai-career-rag)
 
@@ -35,16 +35,16 @@ Users can upload their resume and ask career-related questions, with responses g
 
 ## 🚀 Live Demo
 
-🌐 Demo coming soon – check back later!
+🌐 Live demo coming soon on Vercel – stay tuned!
 
 ---
 
 ## ✨ Features
 
 - RAG pipeline using LangChain, HuggingFace, FAISS
-- Resume upload and PDF parsing
+- CV/Resume upload and PDF parsing
 - LLM-powered Q&A with Groq LLaMA3
-- Local document vector store using FAISS
+- FAISS-powered local vector store for resume chunks
 - Docker-based deployment
 - Railway CLI support for fast cloud deploy
 
@@ -144,7 +144,7 @@ railway up
 
 The frontend is built with Next.js and provides:
 
-- 📤 Resume upload (.PDF, .DOCX, .TXT, .JPG, .JPEG, .PNG)
+- 📤 CV/Resume upload (.PDF, .DOCX, .TXT, .JPG, .JPEG, .PNG)
 - 💬 Question input for career queries
 - 🧠 Real-time answer from backend LLM
 - ⏳ Progress bar and loading UI
@@ -169,10 +169,18 @@ npm run dev
 
 ### API Endpoints
 
-1. `POST /upload` – Uploads and parses resume documents, stores embeddings in FAISS.  
+1. `POST /upload` – Uploads and parses CV/resume documents, stores embeddings in FAISS.  
 2. `POST /ask` – Sends a career-related question and gets a response from Groq LLaMA3 based on uploaded data.
 
-> The frontend uses `NEXT_PUBLIC_API_URL` to connect to backend.
+> The frontend uses `NEXT_PUBLIC_API_BASE` to connect to backend.
+
+---
+
+### 🧩 Frontend Component Structure
+
+- `UploadSection.tsx`: Handles CV/resume upload and progress bar
+- `QuestionSection.tsx`: Input box for user queries
+- `AnswerSection.tsx`: Displays LLM-generated response
 
 ---
 
@@ -187,7 +195,7 @@ Deploy frontend separately via:
 ### Example `.env.local`:
 
 ```env
-NEXT_PUBLIC_API_URL=https://your-backend-url.up.railway.app
+NEXT_PUBLIC_API_BASE=https://your-backend-url.up.railway.app    # or http://localhost:3000
 ```
 
 ---
@@ -209,6 +217,12 @@ ai-career-rag/
 │   ├── public/
 │   ├── src/
 │   │   └── app/
+│   │       └── page.tsx
+│   │       └── ...
+│   │   └── components/
+│   │       └── AnswerSection.tsx
+│   │       └── QuestionSection.tsx
+│   │       └── UploadSection.tsx
 │   ├── package.json
 │   ├── README.md
 │   └── ...

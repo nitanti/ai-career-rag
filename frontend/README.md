@@ -1,6 +1,6 @@
 # Frontend – ai-career-rag
 
-This is the React + Next.js frontend for the AI-powered career assistant. It allows users to upload their resume and ask career-related questions.
+This is the React + Next.js frontend for the AI-powered career assistant. It allows users to upload their resume and ask career-related enquiries.
 
 ---
 
@@ -10,7 +10,15 @@ This is the React + Next.js frontend for the AI-powered career assistant. It all
 - Input box for asking career questions
 - Answers displayed from backend LLM
 - Progress bar and loading indicators
-- Modern UI with Tailwind CSS
+- Modern interface with Tailwind CSS
+
+---
+
+## 🧩 Component Structure
+
+- `UploadSection`: Resume upload and progress UI
+- `QuestionSection`: Text input and Ask button
+- `AnswerSection`: Display area for LLM response
 
 ---
 
@@ -31,7 +39,7 @@ App runs at: http://localhost:3000
 Create a `.env.local` file:
 
 ```bash
-NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_API_BASE=http://localhost:8000
 ```
 
 Point to the backend URL (Railway or localhost)
@@ -53,7 +61,10 @@ Update `NEXT_PUBLIC_API_URL` before deploy.
 ## 📌 Notes
 
 - This project is under active development.
-- Backend is powered by FastAPI, LangChain, Groq LLaMA3.
+- Backend provides:
+   - Resume parsing and embedding
+   - FAISS-based vector search
+   - Retrieval-Augmented Generation (RAG) via Groq LLaMA3
 
 ---
 

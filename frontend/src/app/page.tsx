@@ -1,6 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
+import UploadSection from "@/components/UploadSection";
+import QuestionSection from "@/components/QuestionSection";
+import AnswerSection from "@/components/AnswerSection";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
 
 export default function RAGDemoPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -13,19 +18,18 @@ export default function RAGDemoPage() {
   const [backendReady, setBackendReady] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selected = e.target.files;
-    if (!selected || selected.length === 0) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-    const selectedFile = selected[0];
+    const selectedFile = files[0];
     setFile(selectedFile);
     setUploadStatus("⏳ Uploading...");
     setUploading(true);
     setUploadProgress(0);
     setBackendReady(false);
-    setAnswer(null); // clear previous answer
+    setAnswer(null);
 
     const formData = new FormData();
     formData.append("file", selectedFile);
@@ -71,9 +75,13 @@ export default function RAGDemoPage() {
       };
 
       xhr.send(formData);
-    } catch (err: any) {
+    } catch (err) {
       setUploading(false);
-      setUploadStatus("❌ Upload error: " + err.message);
+      if (err instanceof Error) {
+        setUploadStatus("❌ Upload error: " + err.message);
+      } else {
+        setUploadStatus("❌ Upload error: Unknown error");
+      }
     }
   };
 
@@ -110,9 +118,12 @@ export default function RAGDemoPage() {
           ? data.answer
           : "❌ Error: " + (data.error || "Unknown error.")
       );
-    } catch (err: any) {
-      console.error("Ask error:", err);
-      setAnswer("❌ Error: " + err.message);
+    } catch (err) {
+      if (err instanceof Error) {
+        setAnswer("❌ Ask error: " + err.message);
+      } else {
+        setAnswer("❌ Ask error: Unknown error");
+      }
     }
 
     setLoading(false);
@@ -121,118 +132,23 @@ export default function RAGDemoPage() {
   return (
     <div className="max-w-2xl mx-auto p-6 space-y-6">
       <h1 className="text-2xl font-bold">🎓 Career RAG Demo</h1>
-
-      {/* Upload Section */}
-      <div>
-        <label className="block font-medium">
-          📄 Upload resume or document file:
-        </label>
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          className="hidden"
-          accept=".pdf,.docx,.txt,.png,.jpg,.jpeg"
-        />
-        <button
-          onClick={handleUploadClick}
-          type="button"
-          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
-          disabled={uploading}
-        >
-          {uploading ? "Uploading..." : "Upload File"}
-        </button>
-
-        {uploading && (
-          <div className="mt-2 w-full bg-gray-200 rounded">
-            <div
-              className="bg-blue-500 text-white text-xs font-medium text-center py-1 rounded"
-              style={{ width: `${uploadProgress}%` }}
-            >
-              {uploadProgress}%
-            </div>
-          </div>
-        )}
-
-        {uploadStatus && (
-          <p className="mt-2 text-sm text-gray-700">{uploadStatus}</p>
-        )}
-      </div>
-
-      {/* Ask Section */}
-      <div>
-        <label className="block font-medium">💬 Career-related question:</label>
-        <input
-          type="text"
-          className="w-full mt-2 p-2 border border-gray-300 rounded"
-          placeholder="e.g. How can I transition from a BA to a Data Scientist?"
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !loading && question.trim()) {
-              handleAsk();
-            }
-          }}
-        />
-        <button
-          onClick={handleAsk}
-          type="button"
-          className="mt-2 px-4 py-2 bg-green-600 text-white rounded disabled:opacity-50"
-          disabled={loading || !question.trim() || !backendReady}
-        >
-          {loading ? (
-            <span className="flex items-center gap-2">
-              <svg
-                className="animate-spin h-5 w-5 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                />
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8z"
-                />
-              </svg>
-              Asking...
-            </span>
-          ) : (
-            "Ask Question"
-          )}
-        </button>
-      </div>
-
-      {/* Answer */}
-      {(loading || answer !== null) && (
-        <div
-          className={`
-      p-4 bg-white border border-gray-300 rounded min-h-[80px]
-      transition duration-500 ease-in-out
-      ${
-        answer === null && loading
-          ? "opacity-0 translate-y-2"
-          : "opacity-100 translate-y-0"
-      }
-    `}
-        >
-          <h2 className="font-semibold mb-2 text-gray-800">🧠 Answer:</h2>
-          {loading ? (
-            <p className="text-gray-500 italic">🌀 Loading...</p>
-          ) : (
-            <p className="text-gray-900 whitespace-pre-line font-medium">
-              {answer}
-            </p>
-          )}
-        </div>
-      )}
+      <UploadSection
+        file={file}
+        fileInputRef={fileInputRef}
+        uploading={uploading}
+        uploadProgress={uploadProgress}
+        uploadStatus={uploadStatus}
+        onFileChange={handleFileChange}
+        onUploadClick={handleUploadClick}
+      />
+      <QuestionSection
+        question={question}
+        setQuestion={setQuestion}
+        loading={loading}
+        backendReady={backendReady}
+        onAsk={handleAsk}
+      />
+      <AnswerSection loading={loading} answer={answer} />
     </div>
   );
 }
