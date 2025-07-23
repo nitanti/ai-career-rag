@@ -10,4 +10,4 @@ python-multipart==0.0.20
 unstructured[all-docs]
 sentence-transformers==5.0.0
 faiss-cpu==1.11.0.post1
-pytesseract-0.3.10
+pytesseract
