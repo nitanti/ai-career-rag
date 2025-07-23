@@ -6,7 +6,6 @@ import os
 import tempfile
 from dotenv import load_dotenv
 import logging
-import traceback
 
 # LangChain
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -21,6 +20,9 @@ from langchain_community.document_loaders import (
     UnstructuredWordDocumentLoader,
     UnstructuredImageLoader,
 )
+
+# Fromtemd URL configuration
+FRONTEND_URL = os.getenv("FRONTEND_URL", "*")
 
 # Environment configuration
 IS_DEV = os.getenv("DEBUG_MODE", "false").strip().lower() == "true"
@@ -40,7 +42,7 @@ assert GROQ_API_KEY, "GROQ_API_KEY not found. Please set it in the .env file."
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific domains
+    allow_origins=[FRONTEND_URL],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -214,4 +216,6 @@ async def ask(query: QueryInput):
 
 # Run server locally
 if __name__ == "__main__":
-    uvicorn.run("rag_pipeline:app", host="0.0.0.0", port=8000, reload=True)
+    port = int(os.getenv("PORT", 8000))
+    logger.info(f"Starting server on port {port}")
+    uvicorn.run("rag_pipeline:app", host="0.0.0.0", port=port, reload=IS_DEV)
