@@ -35,7 +35,7 @@ Users can upload their CV/resume and ask career-related questions, with response
 
 ## 🚀 Live Demo
 
-🌐 Live demo coming soon on Vercel – stay tuned!
+🌐 Live demo on Vercel - [Live Demo](https://ai-career-rag.vercel.app)
 
 ---
 
