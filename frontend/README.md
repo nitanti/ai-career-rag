@@ -11,6 +11,10 @@ This is the React + Next.js frontend for the AI-powered career assistant. It all
 - Answers displayed from backend LLM
 - Progress bar and loading indicators
 - Modern interface with Tailwind CSS
+- **Session-aware**: Input disabled if no active session (re-upload required after 10 min timeout)
+- **Force re-upload** if session expired automatically
+- **Real-time progress bar** with % for file upload
+- Supports **slang/metaphor questions** (e.g., "Can I be a rockstar?")
 
 ---
 
@@ -44,6 +48,9 @@ NEXT_PUBLIC_API_BASE=http://localhost:8000
 
 Point to the backend URL (Railway or localhost)
 
+# optional for production deployment
+NEXT_PUBLIC_API_BASE=https://your-backend-url
+
 ---
 
 ## ☁️ Deployment
@@ -65,6 +72,9 @@ Update `NEXT_PUBLIC_API_URL` before deploy.
    - Resume parsing and embedding
    - FAISS-based vector search
    - Retrieval-Augmented Generation (RAG) via Groq LLaMA3
+- Input box is disabled until a file is successfully uploaded and backend session is ready.
+- Automatically detects **session expiration** and prompts for re-upload.
+- Shows **emoji-based structured answers** from backend for clarity.
 
 ---
 

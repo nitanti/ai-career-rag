@@ -47,6 +47,11 @@ Users can upload their CV/resume and ask career-related questions, with response
 - FAISS-powered local vector store for resume chunks
 - Docker-based deployment
 - Railway CLI support for fast cloud deploy
+- Supports **image-based resume upload with OCR** (PNG, JPG, JPEG)
+- **Session-aware backend** (auto-expire after 10 minutes, prompts for re-upload)
+- **Interprets slang, metaphor, and informal career questions**
+  (e.g., “Can I be a rockstar?”, “I want to be a wizard at coding”)
+- **Emoji-based structured answers** for clearer readability
 
 ---
 
@@ -104,6 +109,7 @@ python rag_pipeline.py
 ```
 
 or if you prefer uvicorn:
+
 ```bash
 uvicorn rag_pipeline:app --host 0.0.0.0 --port 8000
 ```
@@ -148,6 +154,9 @@ The frontend is built with Next.js and provides:
 - 💬 Question input for career queries
 - 🧠 Real-time answer from backend LLM
 - ⏳ Progress bar and loading UI
+- 🔄 Session expiration → disables input + shows re-upload prompt
+- 🧹 Auto-clearing file input after successful upload
+- 📊 Visual progress bar for uploads
 
 ---
 
@@ -169,10 +178,21 @@ npm run dev
 
 ### API Endpoints
 
-1. `POST /upload` – Uploads and parses CV/resume documents, stores embeddings in FAISS.  
-2. `POST /ask` – Sends a career-related question and gets a response from Groq LLaMA3 based on uploaded data.
+#### 1️⃣ `POST /upload`
 
-> The frontend uses `NEXT_PUBLIC_API_BASE` to connect to backend.
+- 📤 Uploads and parses CV/resume documents (PDF, DOCX, TXT, PNG, JPG, JPEG)
+- 🧾 Stores embeddings in FAISS vector store
+- 🖼 Supports OCR for image files before embedding
+- ⚡ Returns a unique `session_id` for follow-up questions
+
+#### 2️⃣ `POST /ask/{session_id}`
+
+- 💬 Sends a career-related question and receives an LLM-powered answer
+- 🎯 Returns **structured answers with emoji headings**
+- 🙋 Falls back to addressing the user as **“you”** if no name is detected
+- 🪄 Handles metaphor, slang, and informal career expressions automatically
+
+> ⚙️ The frontend connects to these endpoints using the `NEXT_PUBLIC_API_BASE` environment variable.
 
 ---
 
@@ -188,8 +208,8 @@ npm run dev
 
 Deploy frontend separately via:
 
-- Vercel  
-- Netlify  
+- Vercel
+- Netlify
 - Or Railway (if monorepo setup is used)
 
 ### Example `.env.local`:

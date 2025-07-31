@@ -4,7 +4,10 @@ interface UploadSectionProps {
   file: File | null;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   uploading: boolean;
-  uploadStatus: string | null;
+  uploadStatus: {
+    message: string;
+    state: "loading" | "success" | "error" | null;
+  };
   uploadProgress: number;
   onUploadClick: () => void;
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -22,8 +25,10 @@ export default function UploadSection({
   return (
     <div>
       <label className="block font-medium">
-        📄 Upload resume or document file:
+        📄 Upload your resume file (support PDF, DOCX, TXT, PNG, JPG, JPEG):
       </label>
+
+      {/* Hidden file input */}
       <input
         type="file"
         ref={fileInputRef}
@@ -31,6 +36,8 @@ export default function UploadSection({
         className="hidden"
         accept=".pdf,.docx,.txt,.png,.jpg,.jpeg"
       />
+
+      {/* Upload button */}
       <button
         onClick={onUploadClick}
         type="button"
@@ -40,12 +47,14 @@ export default function UploadSection({
         {uploading ? "Uploading..." : "Upload File"}
       </button>
 
+      {/* Show selected file */}
       {file && (
         <p className="mt-2 text-sm text-gray-500">
           📎 Selected file: <strong>{file.name}</strong>
         </p>
       )}
 
+      {/* Show progress bar */}
       {uploading && (
         <div className="mt-2 w-full bg-gray-200 rounded">
           <div
@@ -57,8 +66,19 @@ export default function UploadSection({
         </div>
       )}
 
-      {uploadStatus && (
-        <p className="mt-2 text-sm text-gray-700">{uploadStatus}</p>
+      {/* Upload status (success, error, loading) */}
+      {uploadStatus.message && (
+        <p
+          className={`mt-2 text-sm ${
+            uploadStatus.state === "error"
+              ? "text-red-600"
+              : uploadStatus.state === "success"
+              ? "text-green-600"
+              : "text-gray-700"
+          }`}
+        >
+          {uploadStatus.message}
+        </p>
       )}
     </div>
   );

@@ -8,7 +8,8 @@
 ![Render](https://img.shields.io/badge/Render-00979D?style=for-the-badge)
 ![Railway](https://img.shields.io/badge/Railway-0B0D0E?style=for-the-badge&logo=railway)
 
-This is the FastAPI backend for the AI-powered career assistant. It uses LangChain, FAISS, and Groq’s LLaMA3 to implement a Retrieval-Augmented Generation (RAG) system that can answer questions based on a user-uploaded resume.
+This is the FastAPI backend for an AI-powered Career RAG Assistant.
+It uses LangChain + FAISS + Groq LLaMA3 to provide career advice based on uploaded resumes/documents with emoji‑based structured answers.
 
 🔗 [GitHub Repository](https://github.com/nitanti/ai-career-rag)
 
@@ -34,6 +35,15 @@ This is the FastAPI backend for the AI-powered career assistant. It uses LangCha
 - Groq LLaMA3-based Q&A with LangChain
 - REST API with FastAPI (`/`, `/upload`, `/ask`)
 - Docker-ready with Railway deployment support
+- Upload & process **PDF / DOCX / TXT / PNG / JPG** (with OCR)
+- **Slang & metaphor friendly classifier** (`rockstar`, `wizard at coding`, `star`, etc.)
+- **Emoji-based structured answers** for better readability:
+  🎯 Career Path (Primary & Backup)  
+  📚 Skills & Certifications to Build  
+  📊 KPIs & Evidence  
+  🛠 Projects to Demonstrate Value  
+  🌐 Networking & Visibility  
+  🗓 Roadmap (30/60/90 days + 6–12 months)
 
 ---
 
@@ -119,6 +129,10 @@ docker run -p 8000:8000 --env-file .env ai-career-rag
 - This project is under active development.
 - Backend is powered by FastAPI, LangChain, Groq LLaMA3.
 - Docker image is optimised using `.dockerignore`. Keep it clean to avoid exceeding build size.
+- Answers now **use emoji-based headings** for readability.
+- **Classifier auto-detects slang/metaphor** as career-related if plausible.
+- **Names only appear if present in the current input** (defaults to “you”).
+- Session expires in **10 min**, requires re-upload after timeout.
 
 ---
 
