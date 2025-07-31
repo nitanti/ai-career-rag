@@ -20,12 +20,22 @@ export default function QuestionSection({
       <label className="block font-medium">💬 Career-related question:</label>
       <input
         type="text"
-        className="w-full mt-2 p-2 border border-gray-300 rounded"
-        placeholder="e.g. How can I transition from a BA to a Data Scientist?"
+        className="w-full mt-2 p-2 border border-gray-300 rounded disabled:opacity-50"
+        placeholder={
+          backendReady
+            ? "e.g. How can I transition from a BA to a Data Scientist?"
+            : "Please upload your document first (or re-upload if session expired)"
+        }
         value={question}
+        disabled={!backendReady} // disable input if session expired
         onChange={(e) => setQuestion(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Enter" && !loading && question.trim()) {
+          if (
+            e.key === "Enter" &&
+            !loading &&
+            question.trim() &&
+            backendReady
+          ) {
             onAsk();
           }
         }}
@@ -34,7 +44,7 @@ export default function QuestionSection({
         onClick={onAsk}
         type="button"
         className="mt-2 px-4 py-2 bg-green-600 text-white rounded disabled:opacity-50"
-        disabled={loading || !question.trim() || !backendReady}
+        disabled={loading || !question.trim() || !backendReady} // Disable button if backend is not ready
       >
         {loading ? (
           <span className="flex items-center gap-2">
