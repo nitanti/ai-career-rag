@@ -56,8 +56,8 @@ model_path = snapshot_download(
 model = SentenceTransformer(model_path)
 
 
-# ✅ Custom embedding wrapper
-class MySentenceTransformerEmbeddings(Embeddings):
+# Custom embedding class that wraps a SentenceTransformer model for use with LangChain-compatible embedding interfaces
+class SentenceTransformerEmbedding(Embeddings):
     def __init__(self, model: SentenceTransformer):
         self.model = model
 
@@ -240,7 +240,7 @@ def process_documents(path: str):
         if not chunks:
             raise ValueError("No readable content found in the image file.")
 
-        embeddings = MySentenceTransformerEmbeddings(model)
+        embeddings = SentenceTransformerEmbedding(model)
 
         return FAISS.from_documents(chunks, embeddings)
     else:
@@ -267,7 +267,7 @@ def process_documents(path: str):
     if IS_DEV:
         logger.debug(f"First chunk preview: {chunks[0].page_content[:200]}")
 
-    embeddings = MySentenceTransformerEmbeddings(model)
+    embeddings = SentenceTransformerEmbedding(model)
 
     return FAISS.from_documents(chunks, embeddings)
 
