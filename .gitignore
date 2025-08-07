@@ -1,0 +1,6 @@
+# macOS system files
+.DS_Store
+**/.DS_Store
+
+# prevent embedded repo from being re-added
+backend/career-rag/
