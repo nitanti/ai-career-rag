@@ -81,7 +81,9 @@ export default function RAGDemoPage() {
         let response: UploadResponse | null = null;
 
         try {
-          response = JSON.parse(xhr.responseText);
+          if (xhr.responseType === "" || xhr.responseType === "text") {
+            response = JSON.parse(xhr.responseText);
+          }
         } catch {
           // ❌ Cannot convert JSON (e.g. received HTML instead)
           const fallbackMessage =
@@ -95,17 +97,23 @@ export default function RAGDemoPage() {
         }
 
         if (xhr.status >= 200 && xhr.status < 300) {
-          if (response.status === "ready") {
+          if (!response) {
+            setUploadStatus({
+              message: "⚠️ No response received from server.",
+              state: "error",
+            });
+            return;
+          } else if (response.status === "ready") {
             setUploadStatus({
               message: "✅ File uploaded successfully!",
               state: "success",
             });
             setBackendReady(true);
-            setSessionId(response.session_id);
+            setSessionId(response.session_id || null);
             setForceNewSession(false);
           } else {
             const fallbackMessage =
-              response.message ||
+              (response && response.message) ||
               "⚠️ Upload failed. File was accepted but could not be processed.";
             setUploadStatus({ message: fallbackMessage, state: "error" });
           }
@@ -122,10 +130,9 @@ export default function RAGDemoPage() {
             ? "❌ A server error occurred. Please try again later."
             : "❌ Upload failed. Please try again.";
 
-          setUploadStatus({
-            message: response.message || fallbackMessage,
-            state: "error",
-          });
+          const message =
+            response && response.message ? response.message : fallbackMessage;
+          setUploadStatus({ message, state: "error" });
         }
       };
 
