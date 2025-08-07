@@ -1,7 +1,6 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import uvicorn
 import os
 import tempfile
 import time
@@ -16,14 +15,62 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
 from langchain_groq import ChatGroq
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import (
     TextLoader,
     PyPDFLoader,
-    UnstructuredWordDocumentLoader,
+    Docx2txtLoader,
 )
 from langchain.schema import Document
+from langchain.embeddings.base import Embeddings
+
+cache_dir = "/tmp/hf_cache"
+os.makedirs(cache_dir, exist_ok=True)
+
+os.environ.update(
+    {
+        "HF_HOME": cache_dir,
+        "TRANSFORMERS_CACHE": cache_dir,
+        "HF_HUB_CACHE": cache_dir,
+        "SENTENCE_TRANSFORMERS_HOME": cache_dir,
+        "HF_HUB_DISABLE_XET": "1",
+        "HF_HUB_ENABLE_HF_TRANSFER": "0",
+    }
+)
+
+from huggingface_hub import snapshot_download
+from sentence_transformers import SentenceTransformer
+
+local_dir = os.path.join(cache_dir, "models", "all-MiniLM-L6-v2")
+os.makedirs(local_dir, exist_ok=True)
+
+model_path = snapshot_download(
+    repo_id="sentence-transformers/all-MiniLM-L6-v2",
+    cache_dir=cache_dir,
+    local_dir=local_dir,
+    local_dir_use_symlinks=False,
+    resume_download=True,
+    force_download=False,
+)
+
+model = SentenceTransformer(model_path)
+
+
+# Custom embedding class that wraps a SentenceTransformer model for use with LangChain-compatible embedding interfaces
+class SentenceTransformerEmbedding(Embeddings):
+    def __init__(self, model: SentenceTransformer):
+        self.model = model
+
+    def embed_documents(self, texts):
+        return self.model.encode(
+            texts, show_progress_bar=False, convert_to_numpy=True
+        ).tolist()
+
+    def embed_query(self, text):
+        return self.model.encode(
+            text, show_progress_bar=False, convert_to_numpy=True
+        ).tolist()
+
 
 # Fromtemd URL configuration
 FRONTEND_URL = os.getenv("FRONTEND_URL", "*")
@@ -166,7 +213,7 @@ def process_documents(path: str):
     elif path.endswith(".txt"):
         loader = TextLoader(path)
     elif path.endswith(".docx"):
-        loader = UnstructuredWordDocumentLoader(path)
+        loader = Docx2txtLoader(path)
     elif path.endswith((".png", ".jpg", ".jpeg")):
         try:
             img = Image.open(path)
@@ -193,9 +240,8 @@ def process_documents(path: str):
         if not chunks:
             raise ValueError("No readable content found in the image file.")
 
-        embeddings = HuggingFaceEmbeddings(
-            model_name="sentence-transformers/all-MiniLM-L6-v2"
-        )
+        embeddings = SentenceTransformerEmbedding(model)
+
         return FAISS.from_documents(chunks, embeddings)
     else:
         raise ValueError(
@@ -221,9 +267,8 @@ def process_documents(path: str):
     if IS_DEV:
         logger.debug(f"First chunk preview: {chunks[0].page_content[:200]}")
 
-    embeddings = HuggingFaceEmbeddings(
-        model_name="sentence-transformers/all-MiniLM-L6-v2"
-    )
+    embeddings = SentenceTransformerEmbedding(model)
+
     return FAISS.from_documents(chunks, embeddings)
 
 
@@ -426,10 +471,3 @@ async def ask(session_id: str, query: QueryInput):
         else:
             logger.error("Unexpected error", exc_info=True)
             return {"error": "Something went wrong. Please try again later."}
-
-
-# Run server locally
-if __name__ == "__main__":
-    port = int(os.getenv("PORT", 8000))
-    logger.info(f"Starting server on port {port}")
-    uvicorn.run("rag_pipeline:app", host="0.0.0.0", port=port, reload=IS_DEV)

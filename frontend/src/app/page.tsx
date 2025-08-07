@@ -7,6 +7,17 @@ import AnswerSection from "@/components/AnswerSection";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
 
+interface UploadResponse {
+  status: "ready" | "error";
+  session_id?: string;
+  message?: string;
+}
+
+interface AskResponse {
+  answer?: string;
+  error?: string;
+}
+
 export default function RAGDemoPage() {
   const [file, setFile] = useState<File | null>(null);
 
@@ -50,7 +61,7 @@ export default function RAGDemoPage() {
     const formData = new FormData();
     formData.append("file", selectedFile);
     if (forceNewSession) {
-      formData.append("force_new_session", "true"); // tell backend to create new session
+      formData.append("force_new_session", "true");
     }
 
     try {
@@ -67,46 +78,69 @@ export default function RAGDemoPage() {
       xhr.onload = () => {
         setUploading(false);
 
-        try {
-          const response = JSON.parse(xhr.responseText);
+        let response: UploadResponse | null = null;
 
-          if (xhr.status >= 200 && xhr.status < 300) {
-            if (response.status === "ready") {
-              setUploadStatus({
-                message: "✅ File uploaded successfully!",
-                state: "success",
-              });
-              setBackendReady(true);
-              setSessionId(response.session_id);
-              setForceNewSession(false); // reset flag after successful upload
-            } else {
-              // ❌ Standard error message for invalid/non-text files
-              setUploadStatus({
-                message:
-                  "❌ Please upload only a resume or career-related document.",
-                state: "error",
-              });
-            }
-          } else {
-            // ❌ Standard error message (backend returned error)
-            setUploadStatus({
-              message:
-                "❌ Please upload only a resume or career-related document.",
-              state: "error",
-            });
+        try {
+          if (xhr.responseType === "" || xhr.responseType === "text") {
+            response = JSON.parse(xhr.responseText);
           }
         } catch {
-          setUploadStatus({
-            message: "⚠️ Upload completed but response parsing failed.",
-            state: "error",
-          });
+          // ❌ Cannot convert JSON (e.g. received HTML instead)
+          const fallbackMessage =
+            xhr.status === 404
+              ? "❌ The service is temporarily unavailable. Please try again shortly."
+              : [502, 503, 504].includes(xhr.status)
+              ? "❌ The system is under heavy load or unavailable. Please try again soon."
+              : "⚠️ Upload completed but received an invalid response.";
+          setUploadStatus({ message: fallbackMessage, state: "error" });
+          return;
+        }
+
+        if (xhr.status >= 200 && xhr.status < 300) {
+          if (!response) {
+            setUploadStatus({
+              message: "⚠️ No response received from server.",
+              state: "error",
+            });
+            return;
+          } else if (response.status === "ready") {
+            setUploadStatus({
+              message: "✅ File uploaded successfully!",
+              state: "success",
+            });
+            setBackendReady(true);
+            setSessionId(response.session_id || null);
+            setForceNewSession(false);
+          } else {
+            const fallbackMessage =
+              (response && response.message) ||
+              "⚠️ Upload failed. File was accepted but could not be processed.";
+            setUploadStatus({ message: fallbackMessage, state: "error" });
+          }
+        } else {
+          const isGatewayError = [502, 503, 504].includes(xhr.status);
+          const isClientError = xhr.status >= 400 && xhr.status < 500;
+          const isServerError = xhr.status >= 500 && xhr.status < 600;
+
+          const fallbackMessage = isGatewayError
+            ? "❌ The system is currently under maintenance or experiencing heavy load. Please try again shortly."
+            : isClientError
+            ? "⚠️ Upload failed. Please check your file format or try a different document."
+            : isServerError
+            ? "❌ A server error occurred. Please try again later."
+            : "❌ Upload failed. Please try again.";
+
+          const message =
+            response && response.message ? response.message : fallbackMessage;
+          setUploadStatus({ message, state: "error" });
         }
       };
 
       xhr.onerror = () => {
         setUploading(false);
         setUploadStatus({
-          message: "❌ Upload error occurred.",
+          message:
+            "❌ Upload failed due to a connection or service issue. Please check your internet or try again shortly.",
           state: "error",
         });
       };
@@ -151,16 +185,14 @@ export default function RAGDemoPage() {
     setAnswer("⌛️ Loading...");
 
     try {
-      // Call /ask/{session_id}
       const res = await fetch(`${API_BASE}/ask/${sessionId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question }),
       });
 
-      const data = await res.json();
+      const data: AskResponse = await res.json();
 
-      // Detect expired/invalid session and reset UI state
       const expired =
         data?.error &&
         typeof data.error === "string" &&
@@ -168,9 +200,9 @@ export default function RAGDemoPage() {
 
       if (expired) {
         setAnswer("⚠️ Session expired. Please upload your document again.");
-        setBackendReady(false); // disable ask UI
-        setSessionId(null); // clear session
-        setQuestion(""); // clear input
+        setBackendReady(false);
+        setSessionId(null);
+        setQuestion("");
         setForceNewSession(true);
         setUploadStatus({
           message:

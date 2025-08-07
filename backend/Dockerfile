@@ -7,9 +7,7 @@ COPY requirements.txt .
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        libpoppler-cpp-dev \
         tesseract-ocr \
-        poppler-utils \
     && rm -rf /var/lib/apt/lists/* && \
     python -m pip install --no-cache-dir --upgrade pip && \
     python -m pip install --no-cache-dir --prefix=/install -r requirements.txt && \
@@ -21,19 +19,21 @@ FROM python:3.10-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+ENV HF_HUB_DISABLE_XET=1 HF_HUB_ENABLE_HF_TRANSFER=0
+
 WORKDIR /app
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        libpoppler-cpp-dev \
         tesseract-ocr \
-        poppler-utils \
     && apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /root/.cache
 
 COPY --from=builder /install /usr/local
 COPY . .
 
-EXPOSE 8000
+RUN mkdir -p /tmp/hf_cache && chmod -R 777 /tmp/hf_cache
 
-CMD ["python", "rag_pipeline.py"]
+EXPOSE 7860
+
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "7860"]

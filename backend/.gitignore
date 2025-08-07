@@ -56,7 +56,7 @@ coverage.xml
 .env.*
 
 # OS junk
-.DS_Store
+**/.DS_Store
 
 # Logs
 *.log
