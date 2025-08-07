@@ -7,6 +7,17 @@ import AnswerSection from "@/components/AnswerSection";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
 
+interface UploadResponse {
+  status: "ready" | "error";
+  session_id?: string;
+  message?: string;
+}
+
+interface AskResponse {
+  answer?: string;
+  error?: string;
+}
+
 export default function RAGDemoPage() {
   const [file, setFile] = useState<File | null>(null);
 
@@ -67,7 +78,8 @@ export default function RAGDemoPage() {
       xhr.onload = () => {
         setUploading(false);
 
-        let response: any = null;
+        let response: UploadResponse | null = null;
+
         try {
           response = JSON.parse(xhr.responseText);
         } catch {
@@ -172,7 +184,7 @@ export default function RAGDemoPage() {
         body: JSON.stringify({ question }),
       });
 
-      const data = await res.json();
+      const data: AskResponse = await res.json();
 
       const expired =
         data?.error &&
